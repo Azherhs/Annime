@@ -5,10 +5,10 @@ import logging
 
 # Function to create and build a new Annoy index
 def create_and_build_annoy_index(data_points_ind, dim=100, metric='angular', num_trees=20):
-    annoy_ann = AnnoyANN(dim=dim, metric=metric, num_trees=num_trees)
-    annoy_ann.add_items(data_points_ind)
-    annoy_ann.build_index(data_points_ind, num_trees=num_trees)
-    return annoy_ann
+    ann = AnnoyANN(dim=dim, metric=metric, num_trees=num_trees)
+    ann.add_items(data_points_ind)
+    ann.build_index(data_points_ind, num_trees=num_trees)
+    return ann
 
 
 # Initialize Annoy interface with angular metric and setup logging

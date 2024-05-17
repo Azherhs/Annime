@@ -6,15 +6,17 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("NmslibDirectExample")
 
+
 # Initialize and build an NMSLIB index
-def create_and_build_nmslib_index(space='cosinesimil', method='hnsw', dtype=nmslib.DistType.FLOAT, data_points=None):
-    index = nmslib.init(method=method, space=space, dtype=dtype)
-    if data_points is not None:
-        for i, vector in enumerate(data_points):
-            index.addDataPoint(i, vector)
-        index.createIndex({'M': 30, 'post': 0, 'efConstruction': 100}, print_progress=False)
+def create_and_build_nmslib_index(space='cosinesimil', method='hnsw', dtype=nmslib.DistType.FLOAT, data_points_ind=None):
+    ind = nmslib.init(method=method, space=space, dtype=dtype)
+    if data_points_ind is not None:
+        for i, vector in enumerate(data_points_ind):
+            ind.addDataPoint(i, vector)
+        ind.createIndex({'M': 30, 'post': 0, 'efConstruction': 100}, print_progress=False)
     logger.info(f"Initialized and built NMSLIB index with space {space}, method {method}, and data type {dtype}.")
-    return index
+    return ind
+
 
 # Generate random high-dimensional data points
 np.random.seed(42)
@@ -22,7 +24,7 @@ data_points = np.random.rand(1000, 40).astype(np.float32)  # 1000 points in 40 d
 query_points = np.random.rand(10, 40).astype(np.float32)  # 10 query points
 
 # Initialize and build the NMSLIB index
-index = create_and_build_nmslib_index(data_points=data_points)
+index = create_and_build_nmslib_index(data_points_ind=data_points)
 
 # Perform a batch of complex queries
 complex_results = []
@@ -34,11 +36,12 @@ logger.info("Performed batch querying.")
 # Simulate an update by creating a new index with additional data points
 new_data_points = np.random.rand(100, 40).astype(np.float32)  # 100 new points
 all_data_points = np.vstack([data_points, new_data_points])
-index = create_and_build_nmslib_index(data_points=all_data_points)
+index = create_and_build_nmslib_index(data_points_ind=all_data_points)
 logger.info("Index rebuilt with additional data points.")
 
 # Benchmark the performance of querying
 import time
+
 start_time = time.time()
 for _ in range(3):  # Rounds
     for query in query_points:

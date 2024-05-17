@@ -5,7 +5,6 @@ import numpy as np
 
 from numpy import ndarray
 
-# from concurrent.futures import ThreadPoolExecutor
 from src.interface_ann import ANNInterface
 import shutil
 
@@ -25,7 +24,6 @@ class NmslibANN(ANNInterface):
         self.logger = logging.getLogger('NmslibANN')
         logging.basicConfig(level=logging.INFO)  # Setup basic configuration for logging
         self.logger.info("NmslibANN instance created with space: %s, method: %s", space, method)
-
 
     def build_index(self, data_points, **kwargs):
         if len(self.data_points) == 0:
@@ -56,8 +54,6 @@ class NmslibANN(ANNInterface):
             self.data_points = np.vstack([self.data_points, data_points])
         for i, point in enumerate(data_points):
             self.index.addDataPoint(i + len(self.data_points) - len(data_points), point)
-
-
 
     def remove_items(self, ids):
         # Ensure ids is a list if not convert numpy array to list
@@ -296,13 +292,3 @@ class NmslibANN(ANNInterface):
         self.restore_index_from_backup('nmslib_backup.bin')
         results = self.batch_query([[0.2, 0.2]], k=2)
         print("Batch Query Results:", results)
-
-
-if __name__ == "__main__":
-    nmslib_ann = NmslibANN()
-    data = [[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]]
-    nmslib_ann.add_items(data)
-    nmslib_ann.build_index(data)
-    nmslib_ann.save_index('complex_nmslib_index.nms')
-    nmslib_ann.load_index('complex_nmslib_index.nms')
-    print("Done processing")

@@ -38,13 +38,6 @@ class AnnoyANN(ANNInterface):
         self.index.load(filepath)
         self.built = True
 
-    def set_distance_metric(self, metric):
-        self.index = AnnoyIndex(self.dim, metric)
-        self.metric = metric
-
-    def set_index_parameters(self, **params):
-        self.num_trees = params.get('num_trees', self.num_trees)
-
     def add_items(self, data_points, ids=None):
         if ids and len(data_points) != len(ids):
             raise ValueError("Length of data_points and ids must match")
@@ -52,13 +45,26 @@ class AnnoyANN(ANNInterface):
             idx = ids[i] if ids else i
             self.index.add_item(idx, vector)
 
+    def remove_items(self, ids):
+        raise NotImplementedError("Annoy does not support removing items directly")
+
+    def update_item(self, item_id, new_vector):
+        raise NotImplementedError("Annoy does not support updating items directly")
+
     def get_item_vector(self, item_id):
         return self.index.get_item_vector(item_id)
+
+    def set_distance_metric(self, metric):
+        self.index = AnnoyIndex(self.dim, metric)
+        self.metric = metric
+
+    def set_index_parameters(self, **params):
+        self.num_trees = params.get('num_trees', self.num_trees)
 
     def optimize_index(self):
         # Annoy does not have a direct optimize method; rebuild the index for optimization
         if self.built:
-            self.index.unbuild() #self.index.unbuild() Exception: You can't unbuild a loaded index
+            self.index.unbuild()  # self.index.unbuild() Exception: You can't unbuild a loaded index
             self.index.build(self.num_trees)
 
     def serialize_index(self, output_format='binary'):
@@ -169,12 +175,6 @@ class AnnoyANN(ANNInterface):
         # initially
         filtered_neighbors = [n for n in all_neighbors if constraints(n)]
         return filtered_neighbors[:k]  # Return only k results after filtering
-
-    def remove_items(self, ids):
-        raise NotImplementedError("Annoy does not support removing items directly")
-
-    def update_item(self, item_id, new_vector):
-        raise NotImplementedError("Annoy does not support updating items directly")
 
     def register_callback(self, event, callback_function):
         # This would involve more complex event handling infrastructure
