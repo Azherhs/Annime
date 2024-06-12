@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 import sys
 import os
+
 # Ensure the 'src' directory is in the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
@@ -9,7 +10,8 @@ from src.annoy_int import AnnoyANN
 from src.ngt_int import NgtANN
 from src.nmslib_int import NmslibANN
 from src.scann_int import ScannANN
-
+from src.hnswlib_int import HnswlibANN
+from src.faiss_int import FaissANN
 
 
 @pytest.fixture(scope='module')
@@ -78,7 +80,7 @@ class TestNmslibANN:
     def test_query(self):
         query_point = self.data[0]
         result = self.ann.query(query_point, k=5)
-        assert len(result) == 5
+        assert len(result[0]) == 5
 
     def test_save_load_index(self):
         self.ann.save_index('test_nmslib_index')
@@ -107,3 +109,49 @@ class TestScannANN:
         self.ann.save_index('test_scann_index')
         self.ann.load_index('test_scann_index')
         assert self.ann.index is not None
+
+
+class TestHnswlibANN:
+
+    @pytest.fixture(autouse=True)
+    def setup_hnswlib(self, data):
+        self.ann = HnswlibANN(dim=10)
+        self.ann.build_index(data)
+        self.data = data
+
+    def test_build_index(self):
+        assert self.ann.built
+        assert self.ann.get_index_size() == 100
+
+    def test_query(self):
+        query_point = self.data[0]
+        result = self.ann.query(query_point, k=5)
+        assert len(result[0]) == 5
+
+    def test_save_load_index(self):
+        self.ann.save_index('test_hnswlib_index')
+        self.ann.load_index('test_hnswlib_index')
+        assert self.ann.built
+
+
+class TestFaissANN:
+
+    @pytest.fixture(autouse=True)
+    def setup_faiss(self, data):
+        self.ann = FaissANN(dim=10)
+        self.ann.build_index(data)
+        self.data = data
+
+    def test_build_index(self):
+        assert self.ann.built
+        assert self.ann.get_index_size() == 100
+
+    def test_query(self):
+        query_point = self.data[0]
+        result = self.ann.query(query_point, k=5)
+        assert len(result[0]) == 5
+
+    def test_save_load_index(self):
+        self.ann.save_index('test_faiss_index')
+        self.ann.load_index('test_faiss_index')
+        assert self.ann.built

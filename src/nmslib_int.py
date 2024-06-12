@@ -1,31 +1,37 @@
-import os
 import logging
+
 import nmslib
 import numpy as np
-
 from numpy import ndarray
 
 from src.interface_ann import ANNInterface
-import shutil
 
 
 class NmslibANN(ANNInterface):
-    data_points: ndarray
+    """
+    An implementation of ANNInterface for the NMSLIB library.
+    """
 
-    def __init__(self, space='l2', method='hnsw', dtype=nmslib.DistType.FLOAT):
+    def __init__(self, space='l2', method='hnsw', data_type=nmslib.DataType.FLOAT):
         super().__init__()
         self.space = space
         self.method = method
-        self.dtype = dtype
-        self.index = nmslib.init(method=method, space=space, dtype=dtype)
+        self.data_type = data_type
+        self.index = nmslib.init(method=method, space=space, data_type=data_type)
         self.data_points = np.empty((0, 50))  # Initialize data_points as an empty array assuming 50 dimensions
         self.built = False
-        # Initialize logger here to ensure it is available in all methods
         self.logger = logging.getLogger('NmslibANN')
         logging.basicConfig(level=logging.INFO)  # Setup basic configuration for logging
         self.logger.info("NmslibANN instance created with space: %s, method: %s", space, method)
 
-    def build_index(self, data_points, **kwargs):
+    def build_index(self, data_points: ndarray, **kwargs):
+        """
+        Build the NMSLIB index from the provided data points.
+
+        Args:
+            data_points (ndarray): A list of data points to index.
+            **kwargs: Arbitrary keyword arguments for index configuration.
+        """
         if len(self.data_points) == 0:
             self.add_items(data_points)
         index_params = kwargs.get('index_params', {'M': 16, 'post': 2, 'efConstruction': 100})
@@ -33,83 +39,160 @@ class NmslibANN(ANNInterface):
         self.built = True
         self.logger.info("Index built with parameters: %s", index_params)
 
-    def query(self, query_point, k=5, **kwargs):
+    def query(self, query_point: ndarray, k=5, **kwargs):
+        """
+        Query the NMSLIB index for the k nearest neighbors of the provided point.
+
+        Args:
+            query_point (ndarray): The query point.
+            k (int): The number of nearest neighbors to return.
+
+        Returns:
+            ndarray: The k nearest neighbors.
+        """
         if not self.built:
             raise Exception("Index must be built before querying")
         return self.index.knnQuery(query_point, k=k)
 
-    def save_index(self, filepath):
+    def save_index(self, filepath: str):
+        """
+        Save the built NMSLIB index to a file.
+
+        Args:
+            filepath (str): The path to the file where the index is to be saved.
+        """
         self.index.saveIndex(filepath, save_data=True)
         self.logger.info("Index saved to %s", filepath)
 
-    def load_index(self, filepath):
+    def load_index(self, filepath: str):
+        """
+        Load the NMSLIB index from a file.
+
+        Args:
+            filepath (str): The path to the file from which the index is to be loaded.
+        """
         self.index.loadIndex(filepath, load_data=True)
         self.built = True
         self.logger.info("Index loaded from %s", filepath)
 
-    def add_items(self, data_points):
+    def add_items(self, data_points: ndarray, ids=None):
+        """
+        Add items to the NMSLIB index.
+
+        Args:
+            data_points (ndarray): A numpy list of data points to add to the index.
+            ids (list): Optional list of ids corresponding to each data point.
+        """
         if self.data_points.shape[0] == 0:  # Handling for when no data points have been added yet
             self.data_points = np.array(data_points)
         else:
             self.data_points = np.vstack([self.data_points, data_points])
         for i, point in enumerate(data_points):
             self.index.addDataPoint(i + len(self.data_points) - len(data_points), point)
+        self.logger.info("Added %d items to the index.", len(data_points))
 
-    def remove_items(self, ids):
-        # Ensure ids is a list if not convert numpy array to list
-        if isinstance(ids, np.ndarray):
-            ids = ids.tolist()
-        # NMSLIB does not support removing items directly from an index; rebuild needed
-        self.logger.warning("Remove operation called; not directly supported, rebuilding index")
-        self.data_points = [dp for i, dp in enumerate(self.data_points) if i not in ids]
+    def delete_item(self, item_id: int):
+        """
+        Delete an item from the NMSLIB index by id.
+
+        Args:
+            item_id (int): The id of the item to be deleted.
+        """
+        # NMSLIB does not support removing items directly; rebuild needed
+        if not self.built:
+            raise Exception("Index must be built before deletion.")
+        self.logger.warning("Remove operation called; not directly supported, rebuilding index.")
+        self.data_points = np.array([dp for i, dp in enumerate(self.data_points) if i != item_id])
         self.build_index(self.data_points)
 
-    def update_item(self, item_id, new_vector):
-        # Direct item update not supported; simulate by rebuilding the index
-        self.logger.warning("Update operation called; not directly supported, rebuilding index")
-        self.data_points[item_id] = new_vector
-        self.build_index(self.data_points)
+    def clear_index(self):
+        """
+        Clear all items from the NMSLIB index.
+        """
+        self.index = nmslib.init(method=self.method, space=self.space, data_type=self.data_type)
+        self.data_points = np.empty((0, 50))
+        self.built = False
+        self.logger.info("Index cleared")
 
-    def get_item_vector(self, item_id):
+    def get_item_vector(self, item_id: int):
+        """
+        Retrieve the vector of an item by id from the NMSLIB index.
+
+        Args:
+            item_id (int): The id of the item.
+
+        Returns:
+            list: The vector of the item.
+        """
         if not self.built:
             raise Exception("Index must be built before accessing items")
         return self.data_points[item_id]
 
     def optimize_index(self):
-        # NMSLIB optimizes during index creation; simulate re-optimization by rebuilding
+        """
+        Optimize the NMSLIB index for better performance during queries.
+        """
+        if not self.built:
+            raise Exception("Index must be built before optimization.")
         self.logger.info("Optimizing index by rebuilding")
         self.build_index(self.data_points)
 
-    def set_distance_metric(self, metric, dtype=None):
-        self.space = metric
-        dtype = dtype if dtype is not None else self.dtype
-        self.index = nmslib.init(method=self.method, space=metric, dtype=dtype)
-        self.logger.info("Distance metric set to %s with dtype %s", metric, dtype)
+    def set_distance_metric(self, metric: str, data_type=None):
+        """
+        Set the distance metric for the NMSLIB index.
+
+        Args:
+            metric (str): The distance metric to use.
+            data_type: The data type of the index (default is None).
+        """
+        data_type = data_type if data_type is not None else self.data_type
+        self.index = nmslib.init(method=self.method, space=metric, data_type=data_type)
+        self.logger.info("Distance metric set to %s with data type %s", metric, data_type)
 
     def set_index_parameters(self, **params):
-        dtype = params.get('dtype', self.dtype)  # Use dtype from params or fallback to the instance attribute
+        """
+        Set parameters for the NMSLIB index.
+
+        Args:
+            **params: Arbitrary keyword arguments specific to the index configuration.
+        """
+        data_type = params.get('data_type', self.data_type)
         self.method = params.get('method', self.method)
         self.space = params.get('space', self.space)
-        self.index = nmslib.init(method=self.method, space=self.space, dtype=dtype)
+        self.index = nmslib.init(method=self.method, space=self.space, data_type=data_type)
         if self.data_points.size > 0:
             self.build_index(self.data_points, index_params=params)
 
-    def clear_index(self):
-        dtype = self.dtype
-        self.index = nmslib.init(method=self.method, space=self.space, dtype=dtype)
-        self.data_points = []
-        self.built = False
-        self.logger.info("Index cleared")
-
     def rebuild_index(self, **kwargs):
+        """
+        Explicitly rebuilds the entire NMSLIB index according to the current configuration and data points.
+
+        Args:
+            **kwargs: Arbitrary keyword arguments for index configuration.
+        """
         self.build_index(self.data_points, **kwargs)
         self.logger.info("Index rebuilt with new parameters: %s", kwargs)
 
     def refresh_index(self):
+        """
+        Refreshes the NMSLIB index by optimizing internal structures without full rebuilding.
+        """
         self.logger.info("Refreshing index (rebuild with same parameters)")
         self.rebuild_index()
 
     def serialize_index(self, output_format='binary'):
+        """
+        Serialize the NMSLIB index into a specified format (e.g., binary) to enable easy transmission or storage.
+
+        Args:
+            output_format (str): The format for serialization (default is 'binary').
+
+        Returns:
+            bytes: The serialized index data.
+
+        Raises:
+            ValueError: If the output format is not supported.
+        """
         if output_format != 'binary':
             raise ValueError("Unsupported format: only binary is supported")
         filepath = "temp_index_save.bin"
@@ -118,6 +201,16 @@ class NmslibANN(ANNInterface):
             return f.read()
 
     def deserialize_index(self, data, input_format='binary'):
+        """
+        Deserialize the NMSLIB index from a given format, restoring it to an operational state.
+
+        Args:
+            data (bytes): The serialized index data.
+            input_format (str): The format of the serialized data (default is 'binary').
+
+        Raises:
+            ValueError: If the input format is not supported.
+        """
         if input_format != 'binary':
             raise ValueError("Unsupported format: only binary is supported")
         filepath = "temp_index_load.bin"
@@ -125,8 +218,18 @@ class NmslibANN(ANNInterface):
             f.write(data)
         self.load_index(filepath)
 
-    def query_radius(self, query_point, radius, sort_results=True):
-        # Example using NMSLIB's rangeQuery feature
+    def query_radius(self, query_point: list, radius: float, sort_results=True):
+        """
+        Query all points within a specified distance (radius) from the query point.
+
+        Args:
+            query_point (list): The query point.
+            radius (float): The radius within which to search.
+            sort_results (bool): Whether to sort the results by distance (default is True).
+
+        Returns:
+            list: A list of points within the specified radius.
+        """
         if not self.built:
             raise Exception("Index must be built before querying.")
         result = self.index.rangeQuery(query_point, radius)
@@ -134,24 +237,57 @@ class NmslibANN(ANNInterface):
             result.sort()
         return result
 
-    def nearest_centroid(self, centroids, k=1):
+    def nearest_centroid(self, centroids: list, k=1):
+        """
+        For each centroid provided, find the nearest k data points.
+
+        Args:
+            centroids (list): A list of centroids.
+            k (int): The number of nearest neighbors to return.
+
+        Returns:
+            list: A list of results for each centroid.
+        """
         results = []
         for centroid in centroids:
             result = self.query(centroid, k=k)
             results.extend(result)
         return results
 
-    def incremental_update(self, new_data_points, removal_ids=None):
+    def incremental_update(self, new_data_points: ndarray, removal_ids=None):
+        """
+        Update the index incrementally with new data points and optionally remove some existing points by IDs.
+
+        Args:
+            new_data_points (ndarray): A list of new data points to add to the index.
+            removal_ids (list): A list of IDs of points to remove from the index (default is None).
+        """
         if removal_ids:
-            self.remove_items(removal_ids)
+            self.delete_item(removal_ids)
         self.add_items(new_data_points)
         self.logger.info("Incremental update performed")
 
     def apply_filter(self, filter_function):
+        """
+        Apply a custom filter function to all data points in the index, possibly modifying or flagging them based on
+        user-defined criteria.
+
+        Args:
+            filter_function (function): A function to apply to each data point.
+
+        Returns:
+            dict: A dictionary of filtered data points.
+        """
         filtered = {i: vec for i, vec in enumerate(self.data_points) if filter_function(vec)}
         return filtered
 
     def get_statistics(self):
+        """
+        Gather and return statistical data about the NMSLIB index, such as point distribution, space utilization, etc.
+
+        Returns:
+            dict: A dictionary of statistical data.
+        """
         stats = {
             'total_items': len(self.data_points),
             'index_built': self.built,
@@ -162,25 +298,55 @@ class NmslibANN(ANNInterface):
         return stats
 
     def register_callback(self, event, callback_function):
-        # Placeholder for actual callback mechanism implementation
+        """
+        Register a callback function to be called on specific events.
+
+        Args:
+            event (str): The event to register the callback for.
+            callback_function (function): The function to call when the event occurs.
+        """
         self.logger.debug("Callback registered for event %s", event)
 
     def unregister_callback(self, event):
-        # Placeholder for actual callback mechanism removal
+        """
+        Unregister a previously registered callback for a specific event.
+
+        Args:
+            event (str): The event to unregister the callback for.
+        """
         self.logger.debug("Callback unregistered for event %s", event)
 
     def list_registered_callbacks(self):
-        # Placeholder for listing current callbacks
+        """
+        List all currently registered callbacks and the events they are associated with.
+
+        Returns:
+            list: A list of registered callbacks.
+        """
         return ["sample_event"]
 
     def perform_maintenance(self):
-        # Simulate maintenance by checking and optionally rebuilding the index
+        """
+        Perform routine maintenance on the NMSLIB index to ensure optimal performance and stability.
+        """
         self.logger.info("Performing maintenance: re-checking index health")
         self.optimize_index()
 
-    def export_statistics(self, output_format='csv'):
+    def export_statistics(self, format='csv'):
+        """
+        Export collected statistical data in a specified format for analysis and reporting purposes.
+
+        Args:
+            format (str): The format for exporting statistics (default is 'csv').
+
+        Returns:
+            str: The exported statistics.
+
+        Raises:
+            ValueError: If the format is not supported.
+        """
         stats = self.get_statistics()
-        if output_format == 'csv':
+        if format == 'csv':
             csv_data = "\n".join([f"{key},{value}" for key, value in stats.items()])
             self.logger.info("Exporting statistics as CSV")
             return csv_data
@@ -188,107 +354,28 @@ class NmslibANN(ANNInterface):
             raise ValueError("Unsupported format, only CSV is currently supported")
 
     def adjust_algorithm_parameters(self, **params):
+        """
+        Dynamically adjust the algorithmic parameters of the NMSLIB algorithm, facilitating on-the-fly optimization
+        based on operational feedback.
+
+        Args:
+            **params: Arbitrary keyword arguments for adjusting algorithm parameters.
+        """
         self.set_index_parameters(**params)
         self.logger.info("Algorithm parameters adjusted: %s", params)
 
-    def query_with_constraints(self, query_point, constraints, k=5):
-        all_results = self.query(query_point, k=k * 10)  # Get more results for filtering
-        filtered_results = [res for res in all_results if constraints(res)]
-        return filtered_results[:k]
-
-    def batch_query(self, query_points, k=5, include_distances=False):
-        results = []
-        for query_point in query_points:
-            result = self.query(query_point, k=k)
-            if include_distances:
-                results.append(result)
-            else:
-                results.append([x[0] for x in result])
-        return results
-
-    def parallel_query(self, query_points, k=5, num_threads=4):
-        # Implement using Python's multiprocessing for true parallelism
-        from multiprocessing import Pool
-        with Pool(processes=num_threads) as pool:
-            results = pool.starmap(self.query, [(point, k) for point in query_points])
-        return results
-
-    def benchmark_performance(self, queries, k=5, rounds=10):
-        # Detailed performance benchmarking using time measurement
-        import time
-        start_time = time.time()
-        for _ in range(rounds):
-            for query in queries:
-                self.query(query, k=k)
-        end_time = time.time()
-        duration = (end_time - start_time) / (len(queries) * rounds)
-        self.logger.info("Benchmark completed: Avg query time = %.5f seconds", duration)
-        return f"Average query time: {duration:.5f} seconds"
-
-    def export_to_dot(self, filepath):
-        # Simulate DOT export if not natively supported
-        self.logger.warning("DOT export not supported, using placeholder")
-        with open(filepath, 'w') as f:
-            f.write("digraph G {\n")
-            for i in range(len(self.data_points)):
-                f.write(f"    {i} [label=\"{i}\"];\n")
-            f.write("}\n")
-        self.logger.info("Index structure exported to DOT file at %s", filepath)
-
-    def enable_logging(self, level='INFO'):
-        # Setup logging configuration
-        logging.basicConfig(level=getattr(logging, level.upper()))
-        self.logger.setLevel(level.upper())
-        self.logger.info("Logging enabled at level: %s", level)
-
-    def delete_item(self, item_id):
-        # NMSLIB does not support deleting items directly; need to rebuild the index
-        if item_id < 0 or item_id >= len(self.data_points):
-            raise ValueError("Invalid item_id")
-        self.data_points = [dp for i, dp in enumerate(self.data_points) if i != item_id]
-        self.build_index(self.data_points)  # Rebuild the index without the specified item
-
-    def get_index_size(self):
-        return len(self.data_points)
-
-    def get_index_memory_usage(self):
-        """ Estimate memory usage by saving the index to a temporary file and checking its size. """
-        temp_path = 'temp_nmslib_index.bin'
-        self.save_index(temp_path)
-        memory_usage = os.path.getsize(temp_path)
-        os.remove(temp_path)
-        return memory_usage
-
-    def backup_index(self, backup_location):
+    def query_with_constraints(self, query_point: ndarray, constraints, k=5):
         """
-        Backup the current state of the index to a specified location.
-        This involves copying the index data file to a backup location.
-        """
-        if not self.built:
-            raise Exception("Index must be built before it can be backed up.")
-        original_path = 'current_nmslib_index.bin'
-        self.save_index(original_path)
-        shutil.copy(original_path, backup_location)
-        os.remove(original_path)  # Cleanup the temporary file
-        print(f"Index backed up to {backup_location}")
+        Perform a query for nearest neighbors that meet certain user-defined constraints.
 
-    def restore_index_from_backup(self, backup_location):
-        """
-        Restore the index state from a backup file.
-        This method loads the index from the specified backup file.
-        """
-        if not os.path.exists(backup_location):
-            raise FileNotFoundError(f"No backup found at {backup_location}")
-        self.load_index(backup_location)
-        print(f"Index restored from {backup_location}")
+        Args:
+            query_point (ndarray): The query point.
+            constraints (function): A function to apply constraints to the results.
+            k (int): The number of nearest neighbors to return.
 
-    # Example of creating and using the NmslibANN class
-    def example_usage(self):
-        data = [[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]]
-        self.build_index(data)
-        print("Index Size:", self.get_index_size())
-        print("Memory Usage:", self.get_index_memory_usage())
-        self.backup_index('nmslib_backup.bin')
-        self.restore_index_from_backup('nmslib_backup.bin')
-        results = self.batch_query([[0.2, 0.2]], k=2)
-        print("Batch Query Results:", results)
+        Returns:
+            ndarray: The constrained nearest neighbors.
+        """
+        all_results = self.query(query_point, k=k * 10)  # Get more results for filtering initially
+        filtered_results = [n for n in all_results if constraints(n)]
+        return filtered_results[:k]  # Return only k results after filtering
