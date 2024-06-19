@@ -1,0 +1,13 @@
+base_args: { 'dim': 784, 'M': 16, 'efConstruction': 200 }
+constructor: HnswlibANN
+module: src.hnswlib_int
+name: hnswlib
+run_groups:
+  M-12:
+    arg_groups: [ { M: 12, efConstruction: 500 } ]
+    args: { }
+    query_args: [ [ 10, 20, 40, 80, 120, 200, 400, 600, 800 ] ]
+  M-16:
+    arg_groups: [ { M: 16, efConstruction: 500 } ]
+    args: { }
+    query_args: [ [ 10, 20, 40, 80, 120, 200, 400, 600, 800 ] ]

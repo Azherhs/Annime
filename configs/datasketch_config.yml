@@ -1,0 +1,7 @@
+base_args: { 'num_perm': 128, 'threshold': 0.5 }
+constructor: DatasketchANN
+module: src.datasketch_ann
+name: datasketch
+run_groups:
+  base:
+    args: [ [ 128, 256, 512 ], [ 8, 16, 32, 64, 128 ] ]

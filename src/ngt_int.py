@@ -1,12 +1,12 @@
 import logging
 import time
-
 import ngtpy
-
 from src.interface_ann import ANNInterface
+from sklearn.base import BaseEstimator, TransformerMixin
+import numpy as np
 
 
-class NgtANN(ANNInterface):
+class NgtANN(ANNInterface, BaseEstimator, TransformerMixin):
     """
     An implementation of ANNInterface for the NGT (Neighborhood Graph and Tree) library.
     """
@@ -485,3 +485,47 @@ class NgtANN(ANNInterface):
         all_results = self.query(query_point, k=k * 10)
         filtered_results = [res for res in all_results if constraints(res)]
         return filtered_results[:k]
+
+    def fit(self, X, y=None, **kwargs):
+        """
+        Fit the Annoy index with the provided data.
+
+        Args:
+            X (ndarray): Training data.
+            y (ndarray): Training labels (optional).
+            **kwargs: Additional parameters for building the index.
+
+        Returns:
+            self
+        """
+        self.build_index(X, **kwargs)
+        return self
+
+    def transform(self, X, k=1, **kwargs):
+        """
+        Transform the data using the Annoy index by querying the nearest neighbors.
+
+        Args:
+            X (ndarray): Data to transform.
+            k (int): Number of nearest neighbors to query.
+            **kwargs: Additional parameters for querying the index.
+
+        Returns:
+            ndarray: Indices of the nearest neighbors.
+        """
+        results = np.array([self.query(x, k=k, **kwargs)[0] for x in X], dtype=int)
+        return results
+
+    def fit_transform(self, X, y=None, **kwargs):
+        """
+        Fit the Annoy index with the provided data and transform it.
+
+        Args:
+            X (ndarray): Training data.
+            y (ndarray): Training labels (optional).
+            **kwargs: Additional parameters for building and querying the index.
+
+        Returns:
+            ndarray: Indices of the nearest neighbors.
+        """
+        return self.fit(X, y, **kwargs).transform(X, **kwargs)

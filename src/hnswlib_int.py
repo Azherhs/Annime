@@ -1,13 +1,14 @@
 import hnswlib
 import numpy as np
 from src.interface_ann import ANNInterface
+from sklearn.base import BaseEstimator, TransformerMixin
 import logging
 import os
 import pickle
 import time
 
 
-class HnswlibANN(ANNInterface):
+class HnswlibANN(ANNInterface, BaseEstimator, TransformerMixin):
     """
     An implementation of ANNInterface for the HNSWLIB library.
     """
@@ -491,3 +492,47 @@ class HnswlibANN(ANNInterface):
         all_results, all_distances = self.query(query_point, k=k * 10)  # Get more results for filtering
         filtered_results = [(n, d) for n, d in zip(all_results, all_distances) if constraints(n)]
         return filtered_results[:k]  # Return only k results after filtering
+
+    def fit(self, X, y=None, **kwargs):
+        """
+        Fit the Annoy index with the provided data.
+
+        Args:
+            X (ndarray): Training data.
+            y (ndarray): Training labels (optional).
+            **kwargs: Additional parameters for building the index.
+
+        Returns:
+            self
+        """
+        self.build_index(X, **kwargs)
+        return self
+
+    def transform(self, X, k=1, **kwargs):
+        """
+        Transform the data using the Annoy index by querying the nearest neighbors.
+
+        Args:
+            X (ndarray): Data to transform.
+            k (int): Number of nearest neighbors to query.
+            **kwargs: Additional parameters for querying the index.
+
+        Returns:
+            ndarray: Indices of the nearest neighbors.
+        """
+        results = np.array([self.query(x, k=k, **kwargs)[0] for x in X], dtype=int)
+        return results
+
+    def fit_transform(self, X, y=None, **kwargs):
+        """
+        Fit the Annoy index with the provided data and transform it.
+
+        Args:
+            X (ndarray): Training data.
+            y (ndarray): Training labels (optional).
+            **kwargs: Additional parameters for building and querying the index.
+
+        Returns:
+            ndarray: Indices of the nearest neighbors.
+        """
+        return self.fit(X, y, **kwargs).transform(X, **kwargs)

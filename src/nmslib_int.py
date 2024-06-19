@@ -3,21 +3,21 @@ import logging
 import nmslib
 import numpy as np
 from numpy import ndarray
-
+from sklearn.base import BaseEstimator, TransformerMixin
 from src.interface_ann import ANNInterface
 
 
-class NmslibANN(ANNInterface):
+class NmslibANN(ANNInterface, BaseEstimator, TransformerMixin):
     """
     An implementation of ANNInterface for the NMSLIB library.
     """
 
-    def __init__(self, space='l2', method='hnsw', data_type=nmslib.DataType.FLOAT):
+    def __init__(self, space='l2', method='hnsw'):
         super().__init__()
+        self.index = nmslib.init(method=method, space=space)
         self.space = space
         self.method = method
-        self.data_type = data_type
-        self.index = nmslib.init(method=method, space=space, data_type=data_type)
+
         self.data_points = np.empty((0, 50))  # Initialize data_points as an empty array assuming 50 dimensions
         self.built = False
         self.logger = logging.getLogger('NmslibANN')
@@ -379,3 +379,47 @@ class NmslibANN(ANNInterface):
         all_results = self.query(query_point, k=k * 10)  # Get more results for filtering initially
         filtered_results = [n for n in all_results if constraints(n)]
         return filtered_results[:k]  # Return only k results after filtering
+
+    def fit(self, X, y=None, **kwargs):
+        """
+        Fit the Annoy index with the provided data.
+
+        Args:
+            X (ndarray): Training data.
+            y (ndarray): Training labels (optional).
+            **kwargs: Additional parameters for building the index.
+
+        Returns:
+            self
+        """
+        self.build_index(X, **kwargs)
+        return self
+
+    def transform(self, X, k=1, **kwargs):
+        """
+        Transform the data using the Annoy index by querying the nearest neighbors.
+
+        Args:
+            X (ndarray): Data to transform.
+            k (int): Number of nearest neighbors to query.
+            **kwargs: Additional parameters for querying the index.
+
+        Returns:
+            ndarray: Indices of the nearest neighbors.
+        """
+        results = np.array([self.query(x, k=k, **kwargs)[0] for x in X], dtype=int)
+        return results
+
+    def fit_transform(self, X, y=None, **kwargs):
+        """
+        Fit the Annoy index with the provided data and transform it.
+
+        Args:
+            X (ndarray): Training data.
+            y (ndarray): Training labels (optional).
+            **kwargs: Additional parameters for building and querying the index.
+
+        Returns:
+            ndarray: Indices of the nearest neighbors.
+        """
+        return self.fit(X, y, **kwargs).transform(X, **kwargs)

@@ -1,77 +1,47 @@
 import numpy as np
 from datasketch import MinHash, MinHashLSH
-from interface_ann import ANNInterface
+from src.interface_ann import ANNInterface
 import logging
 import pickle
+from sklearn.base import BaseEstimator, TransformerMixin
 
 
-class DatasketchANN(ANNInterface):
+class DatasketchANN(ANNInterface, BaseEstimator, TransformerMixin):
     """
     An implementation of ANNInterface using the datasketch library.
     """
 
     def __init__(self, num_perm=128, threshold=0.5):
-        """
-        Initialize the DatasketchANN instance.
-
-        Args:
-            num_perm (int): Number of permutations for MinHash.
-            threshold (float): Threshold for the MinHash LSH.
-        """
-        super().__init__()
         self.num_perm = num_perm
         self.threshold = threshold
         self.lsh = MinHashLSH(threshold=self.threshold, num_perm=self.num_perm)
-        self.data_points = []
+        self.id_map = {}
         self.built = False
         self.logger = logging.getLogger(__name__)
         logging.basicConfig(level=logging.INFO)
         self.logger.info("DatasketchANN instance created.")
 
     def build_index(self, data_points, **kwargs):
-        """
-        Build the MinHash LSH index from the provided data points.
-
-        Args:
-            data_points (np.ndarray): A numpy array of data points to index.
-            **kwargs: Additional arguments for compatibility.
-
-        Raises:
-            ValueError: If data_points is not a 2D numpy array.
-        """
-        if not isinstance(data_points, np.ndarray) or len(data_points.shape) != 2:
-            raise ValueError("data_points must be a 2D numpy array.")
-        self.data_points = data_points
         for idx, point in enumerate(data_points):
             m = MinHash(num_perm=self.num_perm)
             for d in point:
-                m.update(d.encode('utf8'))
-            self.lsh.insert(f"point_{idx}", m)
+                m.update(str(d).encode('utf8'))
+            point_id = f"point_{idx}"
+            self.lsh.insert(point_id, m)
+            self.id_map[point_id] = idx
         self.built = True
         self.logger.info("Index built with %d data points.", len(data_points))
 
-    def query(self, query_point, k=5, **kwargs):
-        """
-        Query the MinHash LSH index for the k nearest neighbors of the provided point.
-
-        Args:
-            query_point (np.ndarray): The query point.
-            k (int): The number of nearest neighbors to return.
-            **kwargs: Additional arguments for compatibility.
-
-        Returns:
-            list: A list of the k nearest neighbors.
-
-        Raises:
-            ValueError: If the index is not built.
-        """
-        if not self.built:
-            raise ValueError("Index not built. Call build_index first.")
+    def query(self, query_point, k=1, **kwargs):
         m = MinHash(num_perm=self.num_perm)
         for d in query_point:
-            m.update(d.encode('utf8'))
+            m.update(str(d).encode('utf8'))
         result = self.lsh.query(m)
-        return result[:k]
+        self.logger.debug("Query result: %s", result)
+        if result:
+            return [self.id_map[r] for r in result[:k]]
+        else:
+            return [-1]
 
     def save_index(self, filepath):
         """
@@ -120,7 +90,7 @@ class DatasketchANN(ANNInterface):
         for idx, point in enumerate(data_points):
             m = MinHash(num_perm=self.num_perm)
             for d in point:
-                m.update(d.encode('utf8'))
+                m.update(str(d).encode('utf8'))
             item_id = f"new_point_{len(self.data_points) + idx}" if ids is None else ids[idx]
             self.lsh.insert(item_id, m)
         self.data_points = np.vstack([self.data_points, data_points])
@@ -474,3 +444,47 @@ class DatasketchANN(ANNInterface):
             NotImplementedError: If the method is not implemented by the subclass.
         """
         raise NotImplementedError("DatasketchANN does not support querying with constraints.")
+
+    def fit(self, X, y=None, **kwargs):
+        """
+        Fit the Annoy index with the provided data.
+
+        Args:
+            X (ndarray): Training data.
+            y (ndarray): Training labels (optional).
+            **kwargs: Additional parameters for building the index.
+
+        Returns:
+            self
+        """
+        self.build_index(X, **kwargs)
+        return self
+
+    def transform(self, X, k=1, **kwargs):
+        """
+        Transform the data using the Annoy index by querying the nearest neighbors.
+
+        Args:
+            X (ndarray): Data to transform.
+            k (int): Number of nearest neighbors to query.
+            **kwargs: Additional parameters for querying the index.
+
+        Returns:
+            ndarray: Indices of the nearest neighbors.
+        """
+        results = np.array([self.query(x, k=k, **kwargs)[0] for x in X], dtype=int)
+        return results
+
+    def fit_transform(self, X, y=None, **kwargs):
+        """
+        Fit the Annoy index with the provided data and transform it.
+
+        Args:
+            X (ndarray): Training data.
+            y (ndarray): Training labels (optional).
+            **kwargs: Additional parameters for building and querying the index.
+
+        Returns:
+            ndarray: Indices of the nearest neighbors.
+        """
+        return self.fit(X, y, **kwargs).transform(X, **kwargs)
