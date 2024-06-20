@@ -1,0 +1,13 @@
+base_args: { 'space_type': 'l2', 'data_type': 'float' }
+constructor: NmslibANN
+module: annime.nmslib_int
+name: nmslib
+run_groups:
+  M-12:
+    arg_groups: [ { M: 12, efConstruction: 800, post: 0 } ]
+    args: { }
+    query_args: [ [ 1, 2, 5, 10, 15, 20, 30, 40, 50, 70, 80 ] ]
+  M-20:
+    arg_groups: [ { M: 20, efConstruction: 800, post: 0 } ]
+    args: { }
+    query_args: [ [ 2, 5, 10, 15, 20, 30, 40, 50, 70, 80 ] ]

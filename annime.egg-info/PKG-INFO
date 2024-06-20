@@ -1,0 +1,143 @@
+Metadata-Version: 2.1
+Name: annime
+Version: 0.1.0.1
+Summary: ANN-interface library
+Home-page: https://github.com/Azherhs/Annime
+Author: Avgustin Zhugalov
+Author-email: avgustinalex@yandex.ru
+License: MIT
+Keywords: ann interface metrics
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy
+Requires-Dist: scipy
+Requires-Dist: scikit-learn
+Requires-Dist: pytest
+Requires-Dist: matplotlib
+Requires-Dist: h5py
+Requires-Dist: PyYAML
+Requires-Dist: hnswlib
+Requires-Dist: datasketch
+Requires-Dist: faiss-cpu
+Requires-Dist: ngt
+Requires-Dist: scann
+Requires-Dist: annoy
+Requires-Dist: nmslib
+
+# Annime Project
+
+## Overview
+
+Annime (Approximate Nearest Neighbors Interface for Metrics Evaluation) is an open-source library that provides a
+unified interface for various Approximate Nearest Neighbor (ANN) implementations. It supports multiple ANN libraries
+including Annoy, NGT, NMSLIB, Faiss, Hnswlib, ScaNN, and Datasketch. This library is designed to simplify the process of
+benchmarking and evaluating the performance of different ANN algorithms.
+
+## Features
+
+- Unified interface for multiple ANN libraries
+- Easy integration and usage
+- Comprehensive set of methods for building, querying, and managing ANN indices
+- Benchmarking and performance evaluation tools
+
+## Installation
+
+To install Annime, clone the repository and install the dependencies using `pip`:
+
+```shell
+git clone https://github.com/Azherhs/Annime.git
+cd Annime
+pip install -r requirements.txt
+```
+
+or
+
+```shell
+pip install annime
+```
+
+## Usage
+
+To use the Annime library, import the specific ANN interface you need and follow the provided examples:
+
+Example with Annoy
+
+```python
+
+from annime.annoy_int import AnnoyANN
+
+# Initialize the Annoy interface
+annoy_ann = AnnoyANN(dim=100, metric='euclidean')
+
+# Build the index with your data
+data_points = ...  # Your ndarray data points
+annoy_ann.build_index(data_points)
+
+# Query the index
+query_point = ...  # Your query point
+results = annoy_ann.query(query_point, k=5)
+print(results)
+```
+
+Example with NMSLIB
+
+```python
+
+from annime.nmslib_int import NmslibANN
+
+# Initialize the NMSLIB interface
+nmslib_ann = NmslibANN(space='l2', method='hnsw')
+
+# Build the index with your data
+data_points = ...  # Your ndarray data points
+nmslib_ann.build_index(data_points)
+
+# Query the index
+query_point = ...  # Your query point
+results = nmslib_ann.query(query_point, k=5)
+print(results)
+```
+
+Running Tests
+
+To ensure that everything is working correctly, you can run the provided tests using pytest:
+
+```shell
+
+pytest
+```
+
+## Supported Libraries
+
+Annime currently supports the following ANN libraries:
+
+- Annoy
+- Datasketch
+- Faiss
+- Hnswlib
+- NGT
+- NMSLIB
+- ScaNN
+
+## Contributing
+
+We welcome contributions from the community! If you would like to contribute to Annime, please follow these steps:
+
+- Fork the repository.
+- Create a new branch for your feature or bugfix.
+- Implement your changes and commit them to your branch.
+- Submit a pull request detailing your changes.
+
+Please ensure your code adheres to the project's coding standards and includes appropriate tests.
+
+## License
+
+This project is licensed under the MIT License. See the LICENSE file for more details.
+
+## Contact
+
+For any inquiries or issues, please open an issue on the GitHub repository.

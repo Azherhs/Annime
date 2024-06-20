@@ -1,17 +1,20 @@
 from annoy import AnnoyIndex
 import numpy as np
 import logging
+import time
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
-def create_and_build_annoy_index(data_points, dim=100, metric='angular', num_trees=20):
+
+def create_and_build_annoy_index(data_points_ind, dim=100, metric='angular', num_trees=20):
     index = AnnoyIndex(dim, metric)
-    for i, vector in enumerate(data_points):
+    for i, vector in enumerate(data_points_ind):
         index.add_item(i, vector)
     index.build(num_trees)
     return index
+
 
 # Initialize data
 np.random.seed(42)
@@ -38,7 +41,6 @@ updated_results = annoy_index.get_nns_by_vector(new_vector, 10, include_distance
 print("Results after simulated update:", updated_results[0])
 
 # Benchmark the performance of querying
-import time
 start_time = time.time()
 for _ in range(5):  # Rounds
     for query in query_points:
