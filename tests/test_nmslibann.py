@@ -2,8 +2,8 @@ import pytest
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
-from src.nmslib_int import NmslibANN
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../annime')))
+from annime.nmslib_int import NmslibANN
 from test_utils import verify_build_and_query, verify_save_and_load, data
 
 

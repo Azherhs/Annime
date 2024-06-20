@@ -1,4 +1,4 @@
-from src.annoy_int import AnnoyANN
+from annime.annoy_int import AnnoyANN
 import numpy as np
 import logging
 
@@ -8,7 +8,7 @@ def create_and_build_annoy_index(data_points_ind, dim=100, metric='angular', num
     ann = AnnoyANN(dim=dim, metric=metric, num_trees=num_trees)
     ann.add_items(data_points_ind)
     ann.build_index(data_points_ind, num_trees=num_trees)
-    return  ann
+    return ann
 
 
 # Initialize Annoy interface with angular metric and setup logging

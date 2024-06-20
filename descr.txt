@@ -1,5 +1,5 @@
 To define the interface requirements for a library that abstracts ANN functionalities, specifically for integrating NMSLIB and Annoy, we need to identify the common functionalities these libraries provide. Both libraries are designed to efficiently handle Approximate Nearest Neighbors searches but may have different APIs and features. The goal here is to distill their capabilities into a unified set of functions that our interface will expose to the user.
-Common Functionalities in NMSLIB and Annoy for Interface Design:
+Common Functionalities for Interface Design:
 
     Data Indexing:
         Functionality to index the dataset for ANN searches. This involves creating a data structure that can efficiently query the nearest neighbors.

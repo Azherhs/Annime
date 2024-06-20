@@ -3,11 +3,14 @@
 .dat
 .ann
 .bin
+.pickle
+.pkl
 benchmarks/
 venv/
 plot.py
 plotting/
 algorithms/
+tests/data/
 datasets.txt
 descr.txt
 test_indexes

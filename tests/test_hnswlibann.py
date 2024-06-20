@@ -2,8 +2,8 @@ import pytest
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
-from src.hnswlib_int import HnswlibANN
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../annime')))
+from annime.hnswlib_int import HnswlibANN
 from test_utils import verify_build_and_query, verify_save_and_load, data
 
 
@@ -17,5 +17,5 @@ class TestHnswlibANN:
         verify_build_and_query(self.ann, self.data)
 
     def test_save_and_load_index(self, data):
-        self.ann.build_index(self.data)
-        verify_save_and_load(self.ann, 'test_hnswlib_index')
+        # self.ann.build_index(self.data)
+        verify_save_and_load(self.ann, self.data, 'test_hnswlib_index')

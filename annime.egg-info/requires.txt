@@ -1,0 +1,14 @@
+numpy
+scipy
+scikit-learn
+pytest
+matplotlib
+h5py
+PyYAML
+hnswlib
+datasketch
+faiss-cpu
+ngt
+scann
+annoy
+nmslib

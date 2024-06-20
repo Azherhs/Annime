@@ -1,6 +1,6 @@
 base_args: { 'dim': 784, 'num_leaves': 2000, 'num_leaves_to_search': 100, 'reordering_num_neighbors': 100, 'training_sample_size': 250000 }
 constructor: ScannANN
-module: src.scann_int
+module: annime.scann_int
 name: scann
 run_groups:
   float:

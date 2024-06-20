@@ -1,6 +1,6 @@
 base_args: { 'space_type': 'l2', 'data_type': 'float' }
 constructor: NmslibANN
-module: src.nmslib_int
+module: annime.nmslib_int
 name: nmslib
 run_groups:
   M-12:

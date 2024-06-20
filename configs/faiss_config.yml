@@ -1,6 +1,6 @@
 base_args: { 'dim': 784 }
 constructor: FaissANN
-module: src.faiss_int
+module: annime.faiss_int
 name: faiss
 run_groups:
   base:

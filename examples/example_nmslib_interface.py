@@ -1,4 +1,4 @@
-from src.nmslib_int import NmslibANN
+from annime.nmslib_int import NmslibANN
 import numpy as np
 import nmslib
 
@@ -25,7 +25,6 @@ nmslib_ann.build_index(data_points, index_params={'M': 30, 'post': 0, 'efConstru
 
 # Perform a batch of complex queries
 complex_results = nmslib_ann.batch_query(query_points, k=5)
-
 
 # Simulate an update by adding new data points and rebuilding the index
 new_data_points = np.random.rand(100, 40).astype(np.float32)  # 100 new points

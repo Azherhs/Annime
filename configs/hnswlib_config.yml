@@ -1,6 +1,6 @@
 base_args: { 'dim': 784, 'M': 16, 'efConstruction': 200 }
 constructor: HnswlibANN
-module: src.hnswlib_int
+module: annime.hnswlib_int
 name: hnswlib
 run_groups:
   M-12:

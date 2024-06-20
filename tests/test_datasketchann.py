@@ -4,8 +4,8 @@ import os
 import sys
 from test_utils import verify_build_and_query, verify_save_and_load
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
-from src.datasketch_ann import DatasketchANN
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../annime')))
+from annime.datasketch_ann import DatasketchANN
 
 
 @pytest.fixture(scope='module')

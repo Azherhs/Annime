@@ -3,8 +3,8 @@ import pytest
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
-from src.faiss_int import FaissANN
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../annime')))
+from annime.faiss_int import FaissANN
 from test_utils import verify_build_and_query, verify_save_and_load
 
 

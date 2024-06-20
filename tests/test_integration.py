@@ -5,14 +5,14 @@ import sys
 import time
 from test_utils import verify_build_and_query, verify_save_and_load
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
-from src.annoy_int import AnnoyANN
-from src.ngt_int import NgtANN
-from src.nmslib_int import NmslibANN
-from src.scann_int import ScannANN
-from src.hnswlib_int import HnswlibANN
-from src.faiss_int import FaissANN
-from src.datasketch_ann import DatasketchANN
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../annime')))
+from annime.annoy_int import AnnoyANN
+from annime.ngt_int import NgtANN
+from annime.nmslib_int import NmslibANN
+from annime.scann_int import ScannANN
+from annime.hnswlib_int import HnswlibANN
+from annime.faiss_int import FaissANN
+from annime.datasketch_ann import DatasketchANN
 
 
 @pytest.fixture(scope='module')

@@ -1,6 +1,6 @@
 base_args: { 'dim': 784, 'metric': 'angular' }
 constructor: AnnoyANN
-module: src.annoy_int
+module: annime.annoy_int
 name: annoy
 run_groups:
   annoy:
